@@ -1,22 +1,110 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response, NextFunction } from "express";
+import { generateToken } from "../utils/jwt";
+import { AuthenticatedRequest } from "../middlewares/authMiddleware";
+import { comparePassword, hashPassword } from "../utils/bcrypt";
 
 const prisma = new PrismaClient();
 
-export const register = async (req: Request, res: Response) => {
+export const register = async (
+  req: Request,
+  res: Response
+): Promise<Response | any> => {
   const { username, password } = req.body;
   try {
-    const newUser = await prisma.users.create({ data: { username, password } });
+    const userExists = await prisma.users.findUnique({ where: { username } });
+
+    if (userExists) {
+      throw new Error("Username already exists.");
+    }
+
+    const hashedPassword = await hashPassword(password);
+
+    const newUser = await prisma.users.create({
+      data: { username, password: hashedPassword },
+    });
 
     if (!newUser) {
       throw new Error("Creating user failed.");
     }
-    console.log(newUser);
 
-    res.status(201).json(newUser);
+    const token = generateToken(String(newUser.id));
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
+    });
+
+    return res.status(201).json({ message: "User created!" });
   } catch (error) {
-    console.log("Error on registering user", error);
-    res.status(500).json({ message: "Error on registering user" });
+    console.log(error);
+    res.status(500).json({ message: `${error}` });
+  }
+};
+
+export const login = async (
+  req: Request,
+  res: Response
+): Promise<Response | any> => {
+  const { username, password } = req.body;
+
+  try {
+    const user = await prisma.users.findUnique({ where: { username } });
+
+    if (!user) {
+      throw new Error("User not found!");
+    }
+
+    const isPassword = await comparePassword(password, user.password);
+
+    if (!isPassword) {
+      return res.status(401).json({ message: "Invalid Credentails" });
+    }
+
+    const token = generateToken(String(user.id));
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, //7 days
+    });
+
+    return res.status(200).json({ message: "Login Successful!" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: `${error}` });
+  }
+};
+
+export const logout = async (
+  req: Request,
+  res: Response
+): Promise<Response | any> => {
+  res.clearCookie("token");
+  return res.status(200).json({ message: "User logged out!" });
+};
+
+export const getCurrentUser = async (
+  req: AuthenticatedRequest,
+  res: Response
+) => {
+  const user = req.user;
+
+  try {
+    const currentUser = await prisma.users.findUnique({
+      where: { id: Number(user.userId) },
+    });
+
+    res.status(200).json({
+      id: currentUser?.id,
+      username: currentUser?.username,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: `${error}` });
   }
 };
 
