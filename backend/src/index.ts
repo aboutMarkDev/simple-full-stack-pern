@@ -9,8 +9,9 @@ configDotenv();
 const app: Application = express();
 const PORT = process.env.PORT;
 
+// console.log(process.env.FRONTEND_URL);
+
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(
   cors({
