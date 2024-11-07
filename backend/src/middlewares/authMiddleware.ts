@@ -16,7 +16,7 @@ const authMiddleware = async (
     try {
       const decoded = jwt.verify(
         token,
-        process.env.JWT_ACCESS_SECRET || "tuwaisue"
+        process.env.JWT_ACCESS_SECRET || "sample"
       );
 
       req.user = decoded;
