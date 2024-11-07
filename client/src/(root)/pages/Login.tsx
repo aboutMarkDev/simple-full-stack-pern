@@ -1,13 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-
-// REMINDER:
-// NEXT TODO:
-// REACT-FORM & ZOD FOR VALIDATION MAKE THE USERNAME LIMITED TO 12 CHARACTERS
-// THEN BUILD A SERVER/BACKEND USING EXPRESS WITH JWT AND POSTGRESQL TO BECOME FAMILIAR WITH SQL.
-// THEN DEPLOY IT
+import useUserStore from "@/store/userStore";
+import { currentUser, login } from "@/api";
+import toast from "react-hot-toast";
+import { errorHandler } from "@/utils";
 
 type LoginFormData = {
   username: string;
@@ -17,15 +15,51 @@ type LoginFormData = {
 const Login = () => {
   const {
     register,
+    reset,
     formState: { errors },
     handleSubmit,
-  } = useForm<LoginFormData>();
+  } = useForm<LoginFormData>({
+    defaultValues: {
+      username: "",
+      password: "",
+    },
+  });
 
-  const onSubmit = async (values: LoginFormData) => {
-    console.log(values);
-  };
+  const { isAuthenticated, checkUserAuth } = useUserStore();
+
+  const navigate = useNavigate();
 
   const [isPassShow, setIsPassShow] = useState(false);
+  const [isLoggingLoading, setIsLoggingLoading] = useState(false);
+
+  useEffect(() => {
+    checkUserAuth(currentUser);
+  }, []);
+
+  if (isAuthenticated) {
+    return <Navigate to="/" />;
+  }
+
+  const onSubmit = async (values: LoginFormData) => {
+    setIsLoggingLoading(true);
+    try {
+      const loginUser = await login(values);
+
+      toast.success(loginUser.message);
+
+      await checkUserAuth(currentUser);
+
+      reset();
+
+      navigate("/");
+    } catch (error: any) {
+      console.log(error);
+      toast.error(errorHandler(error.response.data.message));
+    } finally {
+      setIsLoggingLoading(false);
+    }
+  };
+
   return (
     <section className="flex-grow py-5 px-3 flex items-center justify-center flex-col gap-5 text-sm">
       <h1 className="text-center font-bold text-3xl">Login</h1>
@@ -78,7 +112,7 @@ const Login = () => {
           )}
         </article>
         <Button type="submit" className="w-full">
-          Login
+          {isLoggingLoading ? "Loading..." : "Login"}
         </Button>
 
         <footer className="flex items-center justify-between">
