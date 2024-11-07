@@ -15,7 +15,7 @@ export const register = async (
     const userExists = await prisma.users.findUnique({ where: { username } });
 
     if (userExists) {
-      throw new Error("Username already exists.");
+      throw new Error("User already exists.");
     }
 
     const hashedPassword = await hashPassword(password);
@@ -54,13 +54,13 @@ export const login = async (
     const user = await prisma.users.findUnique({ where: { username } });
 
     if (!user) {
-      throw new Error("User not found!");
+      throw new Error("Something went wrong. Please try again!");
     }
 
     const isPassword = await comparePassword(password, user.password);
 
     if (!isPassword) {
-      return res.status(401).json({ message: "Invalid Credentails" });
+      throw new Error("Login failed. Please try again!");
     }
 
     const token = generateToken(String(user.id));
