@@ -5,4 +5,6 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// console.log(import.meta.env.VITE_BACKEND_URL);
+
 export default api;
