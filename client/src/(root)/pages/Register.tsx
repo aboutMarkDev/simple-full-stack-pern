@@ -1,4 +1,5 @@
 import { currentUser, registerUser } from "@/api";
+import ButtonLoader from "@/components/shared/ButtonLoader";
 import { Button } from "@/components/ui/button";
 import useUserStore from "@/store/userStore";
 import { errorHandler } from "@/utils";
@@ -138,7 +139,7 @@ const Register = () => {
           )}
         </article>
         <Button type="submit" disabled={isRegisterLoading} className="w-full">
-          {isRegisterLoading ? "Loading..." : "Submit"}
+          {isRegisterLoading ? <ButtonLoader /> : "Submit"}
         </Button>
 
         <footer className="flex items-center justify-between">

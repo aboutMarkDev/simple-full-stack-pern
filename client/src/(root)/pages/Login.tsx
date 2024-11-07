@@ -6,6 +6,7 @@ import useUserStore from "@/store/userStore";
 import { currentUser, login } from "@/api";
 import toast from "react-hot-toast";
 import { errorHandler } from "@/utils";
+import ButtonLoader from "@/components/shared/ButtonLoader";
 
 type LoginFormData = {
   username: string;
@@ -111,8 +112,8 @@ const Login = () => {
             <p className="text-sm text-red-500">{errors.password.message}</p>
           )}
         </article>
-        <Button type="submit" className="w-full">
-          {isLoggingLoading ? "Loading..." : "Login"}
+        <Button type="submit" disabled={isLoggingLoading} className="w-full">
+          {isLoggingLoading ? <ButtonLoader /> : "Login"}
         </Button>
 
         <footer className="flex items-center justify-between">
